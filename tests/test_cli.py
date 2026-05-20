@@ -6,7 +6,7 @@ from typer.testing import CliRunner
 
 from brain_lab import cli
 from brain_lab.agent_loop import FakeModel, ModelResponse
-from brain_lab.provider_models import OLLAMA_MODEL, OLLAMA_URL
+from brain_lab.llm import LLM_MODEL, LLM_URL
 from brain_lab.run_logs import write_run_log
 
 
@@ -22,8 +22,8 @@ def test_ask_command_runs_agent_and_prints_answer(monkeypatch, run_log_path):
 
     monkeypatch.setattr(
         cli,
-        "OllamaModel",
-        lambda url=OLLAMA_URL, model=OLLAMA_MODEL: FakeModel([ModelResponse.final("Agent answer.")]),
+        "LocalLLM",
+        lambda: FakeModel([ModelResponse.final("Agent answer.")]),
     )
 
     result = runner.invoke(cli.app, ["ask", "Answer from notes."])
@@ -38,35 +38,31 @@ def test_ask_command_runs_agent_and_prints_answer(monkeypatch, run_log_path):
     assert records[0]["final_answer"] == "Agent answer."
 
 
-def test_ask_command_uses_configured_ollama_url(monkeypatch, run_log_path):
+def test_ask_command_uses_local_llm_defaults(monkeypatch, run_log_path):
     runner = CliRunner()
     captured = {}
 
-    def fake_ollama_model(url=OLLAMA_URL, model=OLLAMA_MODEL):
-        captured["model"] = model
-        captured["url"] = url
+    def fake_local_llm():
+        captured["created"] = True
         return FakeModel([ModelResponse.final("Custom model answer.")])
 
-    monkeypatch.setattr(cli, "OllamaModel", fake_ollama_model)
+    monkeypatch.setattr(cli, "LocalLLM", fake_local_llm)
 
-    result = runner.invoke(
-        cli.app,
-        ["ask", "hello", "--url", "http://192.168.1.43:11434"],
-    )
+    result = runner.invoke(cli.app, ["ask", "hello"])
 
     assert result.exit_code == 0
-    assert captured["model"] == "qwen3:14b"
-    assert captured["url"] == "http://192.168.1.43:11434/api/chat"
-    assert "qwen3:14b" in result.stderr
+    assert captured["created"] is True
+    assert LLM_MODEL in result.stderr
+    assert LLM_URL in result.stderr
 
 
 def test_ask_command_reports_errors(monkeypatch, run_log_path):
     runner = CliRunner()
 
-    def fake_ollama_model(url=OLLAMA_URL, model=OLLAMA_MODEL):
+    def fake_local_llm():
         raise RuntimeError("Connection refused.")
 
-    monkeypatch.setattr(cli, "OllamaModel", fake_ollama_model)
+    monkeypatch.setattr(cli, "LocalLLM", fake_local_llm)
 
     result = runner.invoke(cli.app, ["ask", "Answer from notes."])
 

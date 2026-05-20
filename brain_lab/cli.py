@@ -16,7 +16,7 @@ from brain_lab.notes import (
     search_notes,
     update_note,
 )
-from brain_lab.provider_models import OLLAMA_MODEL, OLLAMA_URL, OllamaModel, ollama_chat_url
+from brain_lab.llm import LLM_MODEL, LLM_URL, LocalLLM
 from brain_lab.run_logs import (
     DEFAULT_RUN_LOG_PATH,
     get_run_log,
@@ -114,27 +114,16 @@ def search_note_text(query: str) -> None:
 @app.command("ask")
 def ask_agent(
     prompt: str,
-    model: str = typer.Option(
-        OLLAMA_MODEL,
-        "--model",
-        help="Ollama model ID.",
-    ),
-    url: str = typer.Option(
-        OLLAMA_URL,
-        "--url",
-        help="Ollama URL. Accepts a base URL or /api/chat endpoint.",
-    ),
     max_steps: int = typer.Option(10, "--max-steps", min=1, help="Maximum agent steps."),
     verbose: bool = typer.Option(True, "--verbose/--quiet", help="Show agent progress."),
     thinking: bool = typer.Option(True, "--thinking/--no-thinking", help="Show model thinking."),
 ) -> None:
     err = Console(stderr=True)
     progress_ui: _ProgressUI | None = None
-    chat_url = ollama_chat_url(url)
     try:
-        agent_model = OllamaModel(url=chat_url, model=model)
+        agent_model = LocalLLM()
         if verbose:
-            _show_agent_start(err, model, chat_url)
+            _show_agent_start(err, LLM_MODEL, LLM_URL)
         progress_ui = _ProgressUI(err, show_thinking=thinking) if verbose else None
         run = run_agent(prompt, agent_model, max_steps=max_steps, progress=progress_ui)
     except Exception as exc:

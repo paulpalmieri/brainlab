@@ -1,6 +1,4 @@
 import json
-import os
-from dataclasses import dataclass
 from typing import Any, Sequence
 
 import requests
@@ -8,23 +6,8 @@ import requests
 from brain_lab.agent_loop import AgentMessage, ModelResponse, ToolCall
 from brain_lab.tools import list_tools
 
-DEFAULT_OLLAMA_BASE_URL = "http://192.168.1.43:11434"
-DEFAULT_OLLAMA_MODEL = "qwen3:14b"
-OLLAMA_MODEL = os.environ.get("BRAIN_LAB_OLLAMA_MODEL", DEFAULT_OLLAMA_MODEL)
-
-
-def ollama_chat_url(value: str | None = None) -> str:
-    raw_url = value or os.environ.get("BRAIN_LAB_OLLAMA_URL") or DEFAULT_OLLAMA_BASE_URL
-    url = raw_url.rstrip("/")
-
-    if url.endswith("/api/chat"):
-        return url
-    if url.endswith("/api"):
-        return f"{url}/chat"
-    return f"{url}/api/chat"
-
-
-OLLAMA_URL = ollama_chat_url()
+LLM_MODEL = "qwen3:14b"
+LLM_URL = "http://localhost:11434/api/chat"
 
 SYSTEM_PROMPT = """You are Brain Lab, a personal notes assistant.
 
@@ -34,23 +17,16 @@ Do not ask clarifying questions. Provide the best possible answer with the infor
 """
 
 
-@dataclass
-class OllamaModel:
-    url: str = ""
-    model: str = OLLAMA_MODEL
-
-    def __post_init__(self) -> None:
-        self.url = ollama_chat_url(self.url)
-
+class LocalLLM:
     def respond(self, messages: Sequence[AgentMessage]) -> ModelResponse:
         payload = {
-            "model": self.model,
+            "model": LLM_MODEL,
             "stream": False,
             "think": True,
             "messages": _build_messages(messages),
             "tools": [_tool_schema(t) for t in list_tools()],
         }
-        resp = requests.post(self.url, json=payload, timeout=120)
+        resp = requests.post(LLM_URL, json=payload, timeout=120)
         resp.raise_for_status()
         msg = resp.json()["message"]
 

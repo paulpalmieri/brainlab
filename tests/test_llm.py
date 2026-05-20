@@ -1,11 +1,10 @@
-import brain_lab.provider_models as provider_models
+import brain_lab.llm as llm
 from brain_lab.agent_loop import AgentMessage, ToolCall
-from brain_lab.provider_models import (
-    OLLAMA_MODEL,
-    OLLAMA_URL,
-    OllamaModel,
+from brain_lab.llm import (
+    LLM_MODEL,
+    LLM_URL,
+    LocalLLM,
     SYSTEM_PROMPT,
-    ollama_chat_url,
 )
 
 
@@ -20,7 +19,7 @@ class FakeResponse:
         return self._data
 
 
-def test_ollama_model_sends_correct_request(monkeypatch):
+def test_local_llm_sends_correct_request(monkeypatch):
     captured = {}
 
     def mock_post(url, json=None, timeout=None):
@@ -28,15 +27,15 @@ def test_ollama_model_sends_correct_request(monkeypatch):
         captured["payload"] = json
         return FakeResponse({"message": {"role": "assistant", "content": "There are no notes.", "thinking": None, "tool_calls": None}})
 
-    monkeypatch.setattr(provider_models.requests, "post", mock_post)
-    model = OllamaModel()
+    monkeypatch.setattr(llm.requests, "post", mock_post)
+    model = LocalLLM()
 
     response = model.respond([AgentMessage(role="user", content="List notes.")])
 
     assert response.final_answer == "There are no notes."
-    assert captured["url"] == OLLAMA_URL
+    assert captured["url"] == LLM_URL
     payload = captured["payload"]
-    assert payload["model"] == OLLAMA_MODEL
+    assert payload["model"] == LLM_MODEL
     assert payload["stream"] is False
     assert payload["think"] is True
     assert payload["messages"][0] == {"role": "system", "content": SYSTEM_PROMPT}
@@ -44,7 +43,7 @@ def test_ollama_model_sends_correct_request(monkeypatch):
     assert any(t["function"]["name"] == "create_note" for t in payload["tools"])
 
 
-def test_ollama_model_parses_tool_calls(monkeypatch):
+def test_local_llm_parses_tool_calls(monkeypatch):
     def mock_post(url, json=None, timeout=None):
         return FakeResponse({
             "message": {
@@ -55,8 +54,8 @@ def test_ollama_model_parses_tool_calls(monkeypatch):
             }
         })
 
-    monkeypatch.setattr(provider_models.requests, "post", mock_post)
-    model = OllamaModel()
+    monkeypatch.setattr(llm.requests, "post", mock_post)
+    model = LocalLLM()
 
     response = model.respond([AgentMessage(role="user", content="List notes.")])
 
@@ -66,7 +65,7 @@ def test_ollama_model_parses_tool_calls(monkeypatch):
     assert response.thinking == "Let me list the notes."
 
 
-def test_ollama_model_extracts_thinking(monkeypatch):
+def test_local_llm_extracts_thinking(monkeypatch):
     def mock_post(url, json=None, timeout=None):
         return FakeResponse({
             "message": {
@@ -77,8 +76,8 @@ def test_ollama_model_extracts_thinking(monkeypatch):
             }
         })
 
-    monkeypatch.setattr(provider_models.requests, "post", mock_post)
-    model = OllamaModel()
+    monkeypatch.setattr(llm.requests, "post", mock_post)
+    model = LocalLLM()
 
     response = model.respond([AgentMessage(role="user", content="How many r's in strawberry?")])
 
@@ -86,15 +85,15 @@ def test_ollama_model_extracts_thinking(monkeypatch):
     assert response.thinking == "s, t, r... there are 3 r's."
 
 
-def test_ollama_model_sends_tool_result_messages(monkeypatch):
+def test_local_llm_sends_tool_result_messages(monkeypatch):
     captured = {}
 
     def mock_post(url, json=None, timeout=None):
         captured["payload"] = json
         return FakeResponse({"message": {"role": "assistant", "content": "Done.", "thinking": None, "tool_calls": None}})
 
-    monkeypatch.setattr(provider_models.requests, "post", mock_post)
-    model = OllamaModel()
+    monkeypatch.setattr(llm.requests, "post", mock_post)
+    model = LocalLLM()
 
     messages = [
         AgentMessage(role="user", content="List notes."),
@@ -114,7 +113,7 @@ def test_ollama_model_sends_tool_result_messages(monkeypatch):
     assert msgs[3]["content"] == "[]"
 
 
-def test_ollama_model_raises_on_http_error(monkeypatch):
+def test_local_llm_raises_on_http_error(monkeypatch):
     import pytest
 
     def mock_post(url, json=None, timeout=None):
@@ -125,31 +124,8 @@ def test_ollama_model_raises_on_http_error(monkeypatch):
                 return {}
         return FailResponse()
 
-    monkeypatch.setattr(provider_models.requests, "post", mock_post)
-    model = OllamaModel()
+    monkeypatch.setattr(llm.requests, "post", mock_post)
+    model = LocalLLM()
 
     with pytest.raises(Exception, match="Connection refused"):
         model.respond([AgentMessage(role="user", content="Hello.")])
-
-
-def test_ollama_model_custom_url(monkeypatch):
-    captured = {}
-
-    def mock_post(url, json=None, timeout=None):
-        captured["url"] = url
-        captured["model"] = json["model"]
-        return FakeResponse({"message": {"role": "assistant", "content": "ok", "thinking": None, "tool_calls": None}})
-
-    monkeypatch.setattr(provider_models.requests, "post", mock_post)
-    model = OllamaModel(url="http://192.168.1.43:11434/api/chat")
-
-    model.respond([AgentMessage(role="user", content="hello")])
-
-    assert captured["url"] == "http://192.168.1.43:11434/api/chat"
-    assert captured["model"] == "qwen3:14b"
-
-
-def test_ollama_chat_url_accepts_base_api_or_endpoint():
-    assert ollama_chat_url("http://192.168.1.43:11434") == "http://192.168.1.43:11434/api/chat"
-    assert ollama_chat_url("http://192.168.1.43:11434/api") == "http://192.168.1.43:11434/api/chat"
-    assert ollama_chat_url("http://192.168.1.43:11434/api/chat") == "http://192.168.1.43:11434/api/chat"

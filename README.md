@@ -16,7 +16,7 @@ execution, and run observability each live in their own small module.
 - Adds, lists, reads, updates, deletes, and searches notes from the CLI.
 - Exposes note operations as validated Pydantic-backed tools.
 - Runs a manual model/tool loop without external agent frameworks.
-- Connects to Ollama on a local network machine for private inference.
+- Connects to local Ollama for private inference.
 - Logs agent runs to JSONL so tool calls and outcomes are inspectable.
 - Includes tests for the note layer, tool layer, agent loop, model adapter, run
   logs, and CLI wiring.
@@ -29,7 +29,7 @@ source .venv/bin/activate
 python -m pip install -e ".[dev]"
 ```
 
-Brain Lab expects an Ollama server at `http://192.168.1.43:11434` and uses
+Brain Lab expects an Ollama server at `http://localhost:11434` and uses
 `qwen3:14b` by default.
 
 ## Notes CLI
@@ -94,12 +94,7 @@ Hide Ollama thinking output while keeping the rest of the progress trace:
 brain ask --no-thinking "Search notes for sqlite"
 ```
 
-The default Ollama endpoint is `http://192.168.1.43:11434/api/chat`. To point at
-a different Ollama endpoint, pass `--url` or set `BRAIN_LAB_OLLAMA_URL`:
-
-```bash
-BRAIN_LAB_OLLAMA_URL="http://192.168.1.43:11434" brain ask "Search notes for sqlite"
-```
+The Ollama endpoint and model are plain constants in `brain_lab/llm.py`.
 
 ## Run Logs
 
@@ -124,7 +119,7 @@ The core flow is intentionally direct:
 
 ```text
 brain ask
-  -> provider_models.py
+  -> llm.py
   -> agent_loop.py
   -> tools.py
   -> notes.py
@@ -140,8 +135,8 @@ Module responsibilities:
 - `brain_lab/notes.py` contains note business logic.
 - `brain_lab/tools.py` wraps note operations as model-callable tools.
 - `brain_lab/agent_loop.py` contains the manual model/tool loop.
-- `brain_lab/provider_models.py` adapts Ollama responses to Brain Lab's internal
-  model protocol.
+- `brain_lab/llm.py` sends chat requests to local Ollama and adapts responses
+  to Brain Lab's internal model protocol.
 - `brain_lab/run_logs.py` writes and reads JSONL run records.
 
 ## Tests
