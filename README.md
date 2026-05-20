@@ -1,9 +1,10 @@
 # Brain Lab
 
-Brain Lab is a local-first notes CLI with an explicit tool layer, a hand-written
-agent loop, local Ollama inference, and JSONL run logs. It is built as a compact
-portfolio project: small enough to inspect end to end, but complete enough to use
-as a private note-taking and agent workflow test bench.
+Brain Lab is my personal note-taking app and a test bench for agentic
+experiments.
+
+It is currently a local-first notes CLI with an explicit tool layer, a
+hand-written agent loop, local Ollama inference, and JSONL run logs.
 
 The project avoids agent frameworks and keeps the important boundaries visible:
 SQLite persistence, note operations, tool schemas, model messages, tool
@@ -14,8 +15,7 @@ execution, and run observability each live in their own small module.
 - Stores notes locally in SQLite.
 - Adds, lists, reads, updates, deletes, and searches notes from the CLI.
 - Exposes note operations as validated Pydantic-backed tools.
-- Runs a manual model/tool loop without LangChain, LlamaIndex, CrewAI, AutoGen,
-  or similar frameworks.
+- Runs a manual model/tool loop without external agent frameworks.
 - Connects to Ollama on a local network machine for private inference.
 - Logs agent runs to JSONL so tool calls and outcomes are inspectable.
 - Includes tests for the note layer, tool layer, agent loop, model adapter, run
