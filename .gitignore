@@ -1,0 +1,12 @@
+data/*.db
+data/*.sqlite
+data/*.sqlite3
+data/*.jsonl
+!data/.gitkeep
+__pycache__/
+.pytest_cache/
+.venv/
+*.egg-info/
+.local/
+.env
+*.pyc
