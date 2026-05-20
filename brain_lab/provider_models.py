@@ -8,7 +8,7 @@ import requests
 from brain_lab.agent_loop import AgentMessage, ModelResponse, ToolCall
 from brain_lab.tools import list_tools
 
-DEFAULT_OLLAMA_BASE_URL = "http://localhost:11434"
+DEFAULT_OLLAMA_BASE_URL = "http://192.168.1.43:11434"
 DEFAULT_OLLAMA_MODEL = "qwen3:14b"
 OLLAMA_MODEL = os.environ.get("BRAIN_LAB_OLLAMA_MODEL", DEFAULT_OLLAMA_MODEL)
 

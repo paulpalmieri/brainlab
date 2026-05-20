@@ -38,7 +38,7 @@ def test_ask_command_runs_agent_and_prints_answer(monkeypatch, run_log_path):
     assert records[0]["final_answer"] == "Agent answer."
 
 
-def test_ask_command_uses_custom_model(monkeypatch, run_log_path):
+def test_ask_command_uses_configured_ollama_url(monkeypatch, run_log_path):
     runner = CliRunner()
     captured = {}
 
@@ -51,13 +51,13 @@ def test_ask_command_uses_custom_model(monkeypatch, run_log_path):
 
     result = runner.invoke(
         cli.app,
-        ["ask", "hello", "--model", "llama3.2", "--url", "http://localhost:11434"],
+        ["ask", "hello", "--url", "http://192.168.1.43:11434"],
     )
 
     assert result.exit_code == 0
-    assert captured["model"] == "llama3.2"
-    assert captured["url"] == "http://localhost:11434/api/chat"
-    assert "llama3.2" in result.stderr
+    assert captured["model"] == "qwen3:14b"
+    assert captured["url"] == "http://192.168.1.43:11434/api/chat"
+    assert "qwen3:14b" in result.stderr
 
 
 def test_ask_command_reports_errors(monkeypatch, run_log_path):

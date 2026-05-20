@@ -132,7 +132,7 @@ def test_ollama_model_raises_on_http_error(monkeypatch):
         model.respond([AgentMessage(role="user", content="Hello.")])
 
 
-def test_ollama_model_custom_url_and_model(monkeypatch):
+def test_ollama_model_custom_url(monkeypatch):
     captured = {}
 
     def mock_post(url, json=None, timeout=None):
@@ -141,15 +141,15 @@ def test_ollama_model_custom_url_and_model(monkeypatch):
         return FakeResponse({"message": {"role": "assistant", "content": "ok", "thinking": None, "tool_calls": None}})
 
     monkeypatch.setattr(provider_models.requests, "post", mock_post)
-    model = OllamaModel(url="http://localhost:11434/api/chat", model="llama3.2")
+    model = OllamaModel(url="http://192.168.1.43:11434/api/chat")
 
     model.respond([AgentMessage(role="user", content="hello")])
 
-    assert captured["url"] == "http://localhost:11434/api/chat"
-    assert captured["model"] == "llama3.2"
+    assert captured["url"] == "http://192.168.1.43:11434/api/chat"
+    assert captured["model"] == "qwen3:14b"
 
 
 def test_ollama_chat_url_accepts_base_api_or_endpoint():
-    assert ollama_chat_url("http://localhost:11434") == "http://localhost:11434/api/chat"
-    assert ollama_chat_url("http://localhost:11434/api") == "http://localhost:11434/api/chat"
-    assert ollama_chat_url("http://localhost:11434/api/chat") == "http://localhost:11434/api/chat"
+    assert ollama_chat_url("http://192.168.1.43:11434") == "http://192.168.1.43:11434/api/chat"
+    assert ollama_chat_url("http://192.168.1.43:11434/api") == "http://192.168.1.43:11434/api/chat"
+    assert ollama_chat_url("http://192.168.1.43:11434/api/chat") == "http://192.168.1.43:11434/api/chat"

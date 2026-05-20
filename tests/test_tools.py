@@ -27,7 +27,7 @@ def test_create_and_list_note_tools(tmp_path):
         {
             "title": "Tool layer",
             "body": "Wrap business logic.",
-            "tags": ["phase-2", "tools"],
+            "tags": ["tooling", "notes"],
         },
         db_path=db_path,
     )
@@ -36,7 +36,7 @@ def test_create_and_list_note_tools(tmp_path):
     assert isinstance(created, Note)
     assert created.title == "Tool layer"
     assert created.body == "Wrap business logic."
-    assert created.tags == ["phase-2", "tools"]
+    assert created.tags == ["tooling", "notes"]
     assert notes == [created]
 
 
